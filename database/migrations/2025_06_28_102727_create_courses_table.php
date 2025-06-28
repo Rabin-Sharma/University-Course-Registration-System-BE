@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('course_code')->unique();
             $table->text('description')->nullable();
+            $table->decimal('price', 10, 2)->default(0.00);
             $table->string('time_description')->nullable();
             $table->string('syllabus')->nullable();
             $table->unsignedInteger('credits')->default(0);
