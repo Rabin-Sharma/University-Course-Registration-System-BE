@@ -13,7 +13,7 @@ class InstructorController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Instructors retrieved successfully',
-            'data' => $instructors
+            'instructors' => $instructors
         ], 200);
     }
 }
