@@ -15,6 +15,6 @@ class CategoryController extends Controller
             'message' => 'Categories retrieved successfully',
             'count' => $categories->count(),
             'categories' => $categories,
-        ]);
+        ], 200);
     }
 }
