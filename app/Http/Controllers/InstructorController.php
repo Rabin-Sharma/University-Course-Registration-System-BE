@@ -13,6 +13,7 @@ class InstructorController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Instructors retrieved successfully',
+            'count' => $instructors->count(),
             'instructors' => $instructors
         ], 200);
     }
