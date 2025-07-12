@@ -29,6 +29,16 @@ class User extends Authenticatable
         'phone',
     ];
 
+    public function courses()
+    {
+        // Define the relationship with the Course model with pivot UserCourseRelation
+        // with additional attributes
+        // such as status, enrolled_at, completed_at, and dropped_at
+        return $this->belongsToMany(Course::class, 'user_course_relations')
+            ->withPivot('status', 'enrolled_at', 'completed_at', 'dropped_at')
+            ->withTimestamps();
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

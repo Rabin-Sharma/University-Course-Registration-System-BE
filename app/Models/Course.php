@@ -37,4 +37,19 @@ class Course extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function students()
+    {
+        // Define the relationship with the User model with pivot UserCourseRelation
+        // with additional attributes such as status, enrolled_at, completed_at, and dropped_at
+        return $this->belongsToMany(User::class, 'user_course_relations')
+            ->withPivot('status', 'enrolled_at', 'completed_at', 'dropped_at')
+            ->withTimestamps();
+    }
+
+    public function timeStamps()
+    {
+        // Define the relationship with the TimeStamp model
+        return $this->hasMany(TimeStamp::class);
+    }
 }

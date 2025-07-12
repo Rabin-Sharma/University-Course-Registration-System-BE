@@ -25,6 +25,10 @@ class CourseSeeder extends Seeder
                 'instructor_id' => 1,
                 'category_id' => 1,
                 'image' => 'courses/intro_to_programming.jpg',
+                'time_stamps' => [
+                    ['day' => 'Monday', 'start_time' => '10:00:00', 'end_time' => '12:00:00'],
+                    ['day' => 'Wednesday', 'start_time' => '10:00:00', 'end_time' => '12:00:00'],
+                ],
             ],
             [
                 'name' => 'Web Development Fundamentals',
@@ -37,6 +41,10 @@ class CourseSeeder extends Seeder
                 'instructor_id' => 2,
                 'category_id' => 2,
                 'image' => 'courses/web_dev_fundamentals.jpg',
+                'time_stamps' => [
+                    ['day' => 'Tuesday', 'start_time' => '14:00:00', 'end_time' => '16:00:00'],
+                    ['day' => 'Thursday', 'start_time' => '14:00:00', 'end_time' => '16:00:00'],
+                ],
             ],
             [
                 'name' => 'Data Science with Python',
@@ -49,11 +57,15 @@ class CourseSeeder extends Seeder
                 'instructor_id' => 3,
                 'category_id' => 3,
                 'image' => 'courses/data_science_python.jpg',
+                'time_stamps' => [
+                    ['day' => 'Friday', 'start_time' => '09:00:00', 'end_time' => '11:00:00'],
+                    ['day' => 'Saturday', 'start_time' => '09:00:00', 'end_time' => '11:00:00'],
+                ],
             ]
         ];
         // Insert or update courses
         foreach ($couses as $course) {
-            Course::updateOrCreate(
+            $courseDB = Course::updateOrCreate(
                 ['course_code' => $course['course_code']],
                 [
                     'name' => $course['name'],
@@ -67,6 +79,19 @@ class CourseSeeder extends Seeder
                     'image' => $course['image'],
                 ]
             );
+
+            // Insert or update time stamps
+            if (isset($course['time_stamps'])) {
+                foreach ($course['time_stamps'] as $time_stamp) {
+                    $courseDB->timeStamps()->updateOrCreate(
+                        ['day' => $time_stamp['day']],
+                        [
+                            'start_time' => $time_stamp['start_time'],
+                            'end_time' => $time_stamp['end_time'],
+                        ]
+                    );
+                }
+            }
         }
     }
 }
