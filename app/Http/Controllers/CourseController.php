@@ -20,20 +20,17 @@ class CourseController extends Controller
 
         $query = Course::query();
 
-        if ($request->has('search') && $request->search)
-        {
+        if ($request->has('search') && $request->search) {
             $query->where('name', 'like', '%' . $request->search . '%')
                 ->orWhere('course_code', 'like', '%' . $request->search . '%')
                 ->orWhere('description', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->has('category') && $request->category)
-        {
+        if ($request->has('category') && $request->category) {
             $query->where('category_id', $request->category);
         }
 
-        if ($request->has('instructor') && $request->instructor)
-        {
+        if ($request->has('instructor') && $request->instructor) {
             $query->where('instructor_id', $request->instructor);
         }
 
@@ -44,6 +41,29 @@ class CourseController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Courses retrieved successfully',
+            'count' => $courses->count(),
+            'courses' => $courses
+        ], 200);
+    }
+
+    public function unEnrolledCourses(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        $courses = Course::whereDoesntHave('students', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->with(['category', 'instructor', 'timeStamps'])->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Unenrolled courses retrieved successfully',
             'count' => $courses->count(),
             'courses' => $courses
         ], 200);
@@ -69,8 +89,7 @@ class CourseController extends Controller
     {
         $user = User::find(Auth::id());
 
-        if (!$user)
-        {
+        if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'User not found',
@@ -79,8 +98,7 @@ class CourseController extends Controller
 
         $selectedCourseID = $request->courseIds ?? [];
 
-        if (empty($selectedCourseID))
-        {
+        if (empty($selectedCourseID)) {
             return response()->json([
                 'status' => false,
                 'message' => 'No courses selected for conflict check',
@@ -100,27 +118,21 @@ class CourseController extends Controller
 
         $conflicts = [];
 
-        foreach ($checkedCourses as $course1)
-        {
-            foreach ($checkedCourses as $course2)
-            {
-                if ($course1->id >= $course2->id)
-                {
+        foreach ($checkedCourses as $course1) {
+            foreach ($checkedCourses as $course2) {
+                if ($course1->id >= $course2->id) {
                     continue;
                 }
-                foreach($course1->timeStamps as $time1)
-                {
-                    foreach($course2->timeStamps as $time2)
-                    {
-                        if($time1->day != $time2->day) continue;
+                foreach ($course1->timeStamps as $time1) {
+                    foreach ($course2->timeStamps as $time2) {
+                        if ($time1->day != $time2->day) continue;
                         $start1 = Carbon::createFromFormat('H:i:s', $time1->start_time);
                         $end1 = Carbon::createFromFormat('H:i:s', $time1->end_time);
                         $start2 = Carbon::createFromFormat('H:i:s', $time2->start_time);
                         $end2 = Carbon::createFromFormat('H:i:s', $time2->end_time);
                         $overlaps = $start1 < $end2 && $start2 < $end1;
 
-                        if($overlaps)
-                        {
+                        if ($overlaps) {
                             $overlapStart = $start1->greaterThan($start2) ? $start1 : $start2;
                             $overlapEnd = $end1->lessThan($end2) ? $end1 : $end2;
 
@@ -128,12 +140,11 @@ class CourseController extends Controller
                                 'course1' => $course1->course_code,
                                 'course2' => $course2->course_code,
                                 'day' => $time1->day,
-                                'reason' => "Overlap time range: " . $overlapStart->format('H:i:s') . " - " . $overlapEnd->format('H:i:s')." on ". $time1->day,
+                                'reason' => "Overlap time range: " . $overlapStart->format('H:i:s') . " - " . $overlapEnd->format('H:i:s') . " on " . $time1->day,
                             ];
                         }
                     }
                 }
-
             }
         }
 
@@ -142,7 +153,38 @@ class CourseController extends Controller
             'message' => 'Conflicted courses retrieved successfully',
             'count' => $enrolledCourses->count(),
             // 'courses' => $enrolledCourses,
-            'conflicts' => $conflicts??[],
+            'conflicts' => $conflicts ?? [],
+        ], 200);
+    }
+
+    public function confirmRegistration(Request $request)
+    {
+        $user = User::find(Auth::id());
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        // Validate the request
+        $request->validate([
+            'courseIds' => 'required|array',
+            'courseIds.*' => 'exists:courses,id',
+        ]);
+
+        //sync the courses with the user
+        foreach ($request->courseIds as $courseId) {
+            $user->courses()->syncWithoutDetaching([
+                $courseId => [
+                    'status' => 'enrolled',
+                    'enrolled_at' => now(),
+                ]
+            ]);
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Courses registered successfully',
         ], 200);
     }
 }
