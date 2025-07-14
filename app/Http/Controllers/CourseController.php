@@ -75,12 +75,18 @@ class CourseController extends Controller
 
         $courses = $user->courses()
             ->withPivot('status', 'enrolled_at', 'completed_at', 'dropped_at')
+            ->with(['category', 'instructor', 'timeStamps'])
             ->get();
+        $count = $courses->count();
+        $credits = $courses->sum('credits');
+        $conflictCount = 0;
 
         return response()->json([
             'status' => true,
             'message' => 'Enrolled courses retrieved successfully',
-            'count' => $courses->count(),
+            'count' => $count,
+            'credits' => $credits,
+            'conflictCount' => $conflictCount,
             'courses' => $courses
         ], 200);
     }
