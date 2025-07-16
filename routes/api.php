@@ -20,4 +20,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/courses/un-enrolled', [CourseController::class, 'unEnrolledCourses']);
     Route::post('courses/check-conflicts', [CourseController::class, 'checkConflicts']);
     Route::post('courses/confirm-registration', [CourseController::class, 'confirmRegistration']);
+    Route::get('courses/routine', [CourseController::class, 'routine']);
 });

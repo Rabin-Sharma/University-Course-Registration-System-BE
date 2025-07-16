@@ -193,4 +193,56 @@ class CourseController extends Controller
             'message' => 'Courses registered successfully',
         ], 200);
     }
+
+
+    public function routine(Request $request)
+    {
+        $user = User::find(Auth::id());
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        $enrolledCourses = $user->courses()
+            ->with(['instructor', 'timeStamps' => function ($query) {
+                $query->orderBy('start_time', 'desc');
+            }])
+            ->get();
+
+
+        $routine = [];
+        $days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+        for ($time = 8; $time <= 20; $time++) {
+            foreach ($days as $day) {
+                $routine[$time][$day] = [];
+
+                foreach ($enrolledCourses as $course) {
+                    $matched = $course->timeStamps->first(function ($ts) use ($time, $day) {
+                        $start = Carbon::parse($ts->start_time)->hour;
+                        return $ts->day === $day &&
+                            $start == $time;
+                    });
+
+                    if ($matched) {
+                        $routine[$time][$day] = [
+                            'course_code' => $course->course_code,
+                            'course_name' => $course->name,
+                            'instructor' => $course->instructor->name,
+                            'start_time' => Carbon::parse($matched->start_time)->format('H:i'),
+                            'end_time' => Carbon::parse($matched->end_time)->format('H:i'),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'routine' => $routine,
+        ]);
+    }
 }
