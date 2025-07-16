@@ -214,9 +214,10 @@ class CourseController extends Controller
 
 
         $routine = [];
-        $days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday' ];
 
         for ($time = 8; $time <= 20; $time++) {
+            $routine[$time] = [];
             foreach ($days as $day) {
                 $routine[$time][$day] = [];
 
