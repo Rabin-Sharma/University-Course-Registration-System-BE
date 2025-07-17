@@ -123,6 +123,7 @@ class CourseController extends Controller
         $checkedCourses = $enrolledCourses->merge($selectedCourses);
 
         $conflicts = [];
+        $conflictCount = 0;
 
         foreach ($checkedCourses as $course1) {
             foreach ($checkedCourses as $course2) {
@@ -141,7 +142,7 @@ class CourseController extends Controller
                         if ($overlaps) {
                             $overlapStart = $start1->greaterThan($start2) ? $start1 : $start2;
                             $overlapEnd = $end1->lessThan($end2) ? $end1 : $end2;
-
+                            $conflictCount++;
                             $conflicts[] = [
                                 'course1' => $course1->course_code,
                                 'course2' => $course2->course_code,
@@ -157,9 +158,9 @@ class CourseController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Conflicted courses retrieved successfully',
+            'conflictCount' => $conflictCount,
             'count' => $enrolledCourses->count(),
-            // 'courses' => $enrolledCourses,
-            'conflicts' => $conflicts ?? [],
+            'conflicts' => $conflicts,
         ], 200);
     }
 
@@ -263,6 +264,81 @@ class CourseController extends Controller
             'status' => true,
             'message' => 'Course details retrieved successfully',
             'course' => $course
+        ], 200);
+    }
+
+    public function dashboardCounts()
+    {
+
+        $user = User::find(Auth::id());
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+
+        $conflictCount = 0;
+        $enrolledCourses = $user->courses()
+            ->with(['category', 'instructor', 'timeStamps'])
+            ->get();
+        $endrolledCount = $enrolledCourses->count();
+        $credits = $enrolledCourses->sum('credits');
+        $conflicts = [];
+
+
+
+        foreach ($enrolledCourses as $course1) {
+            foreach ($enrolledCourses as $course2) {
+                if ($course1->id >= $course2->id) {
+                    continue;
+                }
+                foreach ($course1->timeStamps as $time1) {
+                    foreach ($course2->timeStamps as $time2) {
+                        if ($time1->day != $time2->day) continue;
+                        $start1 = Carbon::createFromFormat('H:i:s', $time1->start_time);
+                        $end1 = Carbon::createFromFormat('H:i:s', $time1->end_time);
+                        $start2 = Carbon::createFromFormat('H:i:s', $time2->start_time);
+                        $end2 = Carbon::createFromFormat('H:i:s', $time2->end_time);
+                        $overlaps = $start1 < $end2 && $start2 < $end1;
+
+                        if ($overlaps) {
+                            $overlapStart = $start1->greaterThan($start2) ? $start1 : $start2;
+                            $overlapEnd = $end1->lessThan($end2) ? $end1 : $end2;
+                            $conflictCount++;
+                            $conflicts[] = [
+                                'course1' => $course1->course_code,
+                                'course2' => $course2->course_code,
+                                'day' => $time1->day,
+                                'reason' => "Overlap time range: " . $overlapStart->format('H:i:s') . " - " . $overlapEnd->format('H:i:s') . " on " . $time1->day,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        $nextCourse = $user->courses()
+            ->with(['timeStamps' => function ($query) {
+                $query->where('start_time', '>', now()->format('H:i:s'))
+                    ->orderBy('start_time', 'asc');
+            }])
+            ->first();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Dashboard counts retrieved successfully',
+            'enrolledCount' => $endrolledCount,
+            'credits' => $credits,
+            'conflictCount' => $conflictCount,
+            'conflicts' => $conflicts,
+            'nextCourse' => $nextCourse ? [
+                'course_code' => $nextCourse->course_code,
+                'course_name' => $nextCourse->name,
+                'start_time' => $nextCourse->timeStamps->first()->start_time ?? null,
+                'end_time' => $nextCourse->timeStamps->first()->end_time ?? null,
+            ] : null
         ], 200);
     }
 }
