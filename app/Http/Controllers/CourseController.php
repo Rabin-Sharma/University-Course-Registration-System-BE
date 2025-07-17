@@ -214,7 +214,7 @@ class CourseController extends Controller
 
 
         $routine = [];
-        $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday' ];
+        $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
         for ($time = 8; $time <= 20; $time++) {
             $routine[$time] = [];
@@ -245,5 +245,24 @@ class CourseController extends Controller
             'status' => true,
             'routine' => $routine,
         ]);
+    }
+
+    public function courseDetails($id)
+    {
+        $course = Course::with(['category', 'instructor', 'timeStamps'])
+            ->find($id);
+
+        if (!$course) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Course not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Course details retrieved successfully',
+            'course' => $course
+        ], 200);
     }
 }
