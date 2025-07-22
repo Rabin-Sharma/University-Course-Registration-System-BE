@@ -39,6 +39,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function activities()
+    {
+        return $this->hasMany(Activity::class);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

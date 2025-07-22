@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
@@ -23,4 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('courses/routine', [CourseController::class, 'routine']);
     Route::get('courses/{course}', [CourseController::class, 'courseDetails']);
     Route::get('dashboard/counts', [CourseController::class, 'dashboardCounts']);
+
+    Route::get('activities', [ActivityController::class, 'index']);
 });

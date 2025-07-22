@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\Course;
 use App\Models\User;
 use Carbon\Carbon;
@@ -189,6 +190,17 @@ class CourseController extends Controller
                 ]
             ]);
         }
+
+        // Log the activity
+        foreach ($request->courseIds as $courseId) {
+            $activity = new Activity();
+            $activity->user_id = $user->id;
+            $activity->title = "Course Registration";
+            $course = Course::find($courseId);
+            $activity->description = "Registered for $course->course_code -  $course->name";
+            $activity->save();
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Courses registered successfully',
